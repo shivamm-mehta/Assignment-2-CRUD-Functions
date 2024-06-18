@@ -1,129 +1,130 @@
-﻿using Assignment2;
-using Core.Entity;
+﻿using Core.Entity;
 
-class Program
+namespace Assignment2
 {
-    static void Main(string[] args)
+    class Program
     {
-        using (var context = new DataContext())
+        static void Main(string[] args)
         {
-            context.Database.EnsureCreated();
-            bool exit = false;
-
-            Console.WriteLine("Enter commands: add, list, edit <id>, delete <id>, or exit");
-
-            while (!exit)
+            using (var context = new DataContext())
             {
-                Console.Write("Enter your input> ");
-                string input = Console.ReadLine();
-                var userInput = input.Split(' ');
+                context.Database.EnsureCreated();
+                var userRepository = new UserRepository(context);
+                bool exit = false;
 
-                if (userInput[0].ToLower() == "add")
+                Console.WriteLine("Enter commands: add, list, edit <id>, delete <id>, or exit");
+
+                while (!exit)
                 {
-                    AddUser(context);
-                }
-                else if (userInput[0].ToLower() == "list")
-                {
-                    ListUsers(context);
-                }
-                else if (userInput[0].ToLower() == "edit")
-                {
-                    if (userInput.Length > 1 && int.TryParse(userInput[1], out int editId))
+                    Console.Write("Enter your input> ");
+                    string input = Console.ReadLine();
+                    var userInput = input.Split(' ');
+
+                    if (userInput[0].ToLower() == "add")
                     {
-                        EditUser(context, editId);
+                        AddUser(userRepository);
+                    }
+                    else if (userInput[0].ToLower() == "list")
+                    {
+                        ListUsers(userRepository);
+                    }
+                    else if (userInput[0].ToLower() == "edit")
+                    {
+                        if (userInput.Length > 1 && int.TryParse(userInput[1], out int editId))
+                        {
+                            EditUser(userRepository, editId);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid command. Use: edit <id>");
+                        }
+                    }
+                    else if (userInput[0].ToLower() == "delete")
+                    {
+                        if (userInput.Length > 1 && int.TryParse(userInput[1], out int deleteId))
+                        {
+                            DeleteUser(userRepository, deleteId);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid command. Use: delete <id>");
+                        }
+                    }
+                    else if (userInput[0].ToLower() == "exit")
+                    {
+                        exit = true;
                     }
                     else
                     {
-                        Console.WriteLine("Invalid command. Use: edit <id>");
+                        Console.WriteLine("Unknown command. Valid commands are: add, list, edit <id>, delete <id>, exit");
                     }
-                }
-                else if (userInput[0].ToLower() == "delete")
-                {
-                    if (userInput.Length > 1 && int.TryParse(userInput[1], out int deleteId))
-                    {
-                        DeleteUser(context, deleteId);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Invalid command. Use: delete <id>");
-                    }
-                }
-                else if (userInput[0].ToLower() == "exit")
-                {
-                    exit = true;
-                }
-                else
-                {
-                    Console.WriteLine("Unknown command. Valid commands are: add, list, edit <id>, delete <id>, exit");
                 }
             }
         }
-    }
 
-    static void AddUser(DataContext context)
-    {
-        Console.Write("Enter Name: ");
-        string name = Console.ReadLine();
-        Console.Write("Enter Email: ");
-        string email = Console.ReadLine();
-
-        var user = new User { Name = name, Email = email };
-        context.Users.Add(user);
-        context.SaveChanges();
-        Console.WriteLine($"User {name} added.");
-    }
-
-    static void ListUsers(DataContext context)
-    {
-        var users = context.Users.ToList();
-        if (users.Count == 0)
+        static void AddUser(IUserRepository userRepository)
         {
-            Console.WriteLine("No users found.");
+            Console.Write("Enter Name: ");
+            string name = Console.ReadLine();
+            Console.Write("Enter Email: ");
+            string email = Console.ReadLine();
+
+            var user = new User { Name = name, Email = email };
+            userRepository.AddUser(user);
+            Console.WriteLine($"User {name} added.");
         }
-        else
+
+        static void ListUsers(IUserRepository userRepository)
         {
-            Console.WriteLine("ID\tName\t\tEmail");
-            Console.WriteLine("--------------------------------------------------");
-            foreach (var user in users)
+            var users = userRepository.GetAllUsers();
+            if (!users.Any())
             {
-                Console.WriteLine($"{user.Id}\t{user.Name}\t\t{user.Email}");
+                Console.WriteLine("No users found.");
+            }
+            else
+            {
+                Console.WriteLine("ID\tName\t\tEmail");
+                Console.WriteLine("--------------------------------------------------");
+                foreach (var user in users)
+                {
+                    Console.WriteLine($"{user.Id}\t{user.Name}\t\t{user.Email}");
+                }
             }
         }
-    }
 
-    static void EditUser(DataContext context, int id)
-    {
-        var user = context.Users.Find(id);
-        if (user != null)
+        static void EditUser(IUserRepository userRepository, int id)
         {
-            Console.Write("Enter new Name: ");
-            string updatedName = Console.ReadLine();
-            Console.Write("Enter new Email: ");
-            string updatedEmail = Console.ReadLine();
+            var user = userRepository.GetUserById(id);
+            if (user != null)
+            {
+                Console.Write("Enter new Name: ");
+                string updatedName = Console.ReadLine();
+                Console.Write("Enter new Email: ");
+                string updatedEmail = Console.ReadLine();
 
-            user.Name = updatedName;
-            user.Email = updatedEmail;
-            context.SaveChanges();
-            Console.WriteLine($"User updated.");
+                user.Name = updatedName;
+                user.Email = updatedEmail;
+                userRepository.UpdateUser(user);
+                Console.WriteLine($"User updated.");
+            }
+            else
+            {
+                Console.WriteLine($"User not found.");
+            }
         }
-        else
-        {
-            Console.WriteLine($"User not found.");
-        }
-    }
 
-    static void DeleteUser(DataContext context, int id)
-    {
-        var user = context.Users.Find(id);
-        if (user != null)
+        static void DeleteUser(IUserRepository userRepository, int id)
         {
-            context.Users.Remove(user);
-            context.SaveChanges();
-            Console.WriteLine($"User deleted.");
-        }
-        else
-        {
-            Console.WriteLine($"User not found.");
+            var user = userRepository.GetUserById(id);
+            if (user != null)
+            {
+                userRepository.DeleteUser(id);
+                Console.WriteLine($"User deleted.");
+            }
+            else
+            {
+                Console.WriteLine($"User not found.");
+            }
         }
     }
 }
