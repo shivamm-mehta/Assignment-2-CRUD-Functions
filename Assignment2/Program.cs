@@ -14,7 +14,7 @@ class Program
 
             while (!exit)
             {
-                Console.Write("> ");
+                Console.Write("Enter your input> ");
                 string input = Console.ReadLine();
                 var userInput = input.Split(' ');
 
