@@ -1,6 +1,7 @@
-﻿using Assignment2;
+﻿using Core;
+using Core.Entity;
 
-namespace Core.Entity
+namespace Assignment2
 {
     public class UserRepository : IUserRepository
     {

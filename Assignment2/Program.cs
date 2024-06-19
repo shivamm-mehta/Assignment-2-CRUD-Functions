@@ -1,4 +1,5 @@
-﻿using Core.Entity;
+﻿using Core;
+using Core.Entity;
 
 namespace Assignment2
 {
